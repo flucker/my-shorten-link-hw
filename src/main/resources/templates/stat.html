@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Stats</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <h1 class="my-4">URL Stats</h1>
+    <!-- Table for displaying stats -->
+    <table class="table table-striped" id="statsTable">
+        <thead>
+        <tr>
+            <th>URL</th>
+            <th>Last Access</th>
+            <th>Count</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Stat rows will be dynamically inserted here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statsTable = document.getElementById('statsTable').getElementsByTagName('tbody')[0];
+
+        // Fetch stat from API and populate the table
+        function loadStats() {
+            fetch('/stat', {method: 'POST'})
+                .then(response => response.json())
+                .then(urls_stat => {
+                    statsTable.innerHTML = ''; // Clear the table before inserting new rows
+                    urls_stat.forEach(url_stat => {
+                        const row = statsTable.insertRow();
+                        row.innerHTML = `
+                            <td>${url_stat.url}</td>
+                            <td>${dayjs(url_stat.lastAccess).format('YYYY-MM-DD HH:mm:ss')}</td>
+                            <td>${url_stat.count}</td>
+                            <td>
+                                <button class="btn btn-warning toggle-btn" data-id="${url_stat.id}">
+                                    Delete
+                                </button>
+                            </td>
+                        `;
+
+                        // Attach toggle functionality to the button
+                        row.querySelector('.toggle-btn').addEventListener('click', function() {
+                            deleteUrl(url_stat.id);
+                        });
+                    });
+                })
+                .catch(error => console.error('Error loading stat:', error));
+        }
+
+        // Delete url
+        function deleteUrl(urlId) {
+            fetch(`/my/${urlId}`, {
+                method: 'DELETE',
+            })
+                .then(response => {
+                    if (response.ok) {
+                        loadStats(); // Reload the stat
+                    } else {
+                        alert('Failed to delete url.');
+                    }
+                })
+                .catch(error => console.error('Error deleting url:', error));
+        }
+
+        // Initial load of stat
+        loadStats();
+    });
+</script>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+</body>
+</html>
